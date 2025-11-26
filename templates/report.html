@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>AI-Procure: Отчёт по тендеру {{ announcement_id }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f9f9f9; color: #333; }
+        h1 { color: #1e40af; text-align: center; }
+        h2 { color: #1e40af; border-bottom: 2px solid #ddd; padding-bottom: 8px; }
+        .lot { background: white; padding: 20px; margin: 20px 0; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th { background: #1e40af; color: white; padding: 12px; }
+        td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+        tr:nth-child(even) { background: #f8fafc; }
+        .risk { background: #fee2  !important; font-weight: bold; }
+        .supplier { font-weight: bold; color: #059669; }
+        .footer { text-align: center; margin-top: 50px; color: #666; font-size: 0.9em; }
+        @media print { body { background: white; } .lot { box-shadow: none; page-break-inside: avoid; } }
+    </style>
+</head>
+<body>
+    <h1>AI-Procure: Анализ тендера {{ announcement_id }}</h1>
+    <p style="text-align:center;"><strong>Всего лотов:</strong> {{ total_lots }}</p>
+
+    {% for lot in lots %}
+    <div class="lot">
+        <h2>{{ lot.item_name }}</h2>
+        <p><strong>Плановая сумма:</strong> {{ lot.planned_sum|float|round(0)|int }} ₸</p>
+        <p><strong>Описание:</strong> {{ lot.description[:300] }}...</p>
+
+        <h3>Рекомендуемые поставщики:</h3>
+        {% if lot.recommended_suppliers %}
+        <table>
+            <tr>
+                <th>№</th>
+                <th>Поставщик</th>
+                <th>Релевантность</th>
+                <th>Риски</th>
+            </tr>
+            {% for i, s in enumerate(lot.recommended_suppliers, 1) %}
+            <tr {% if s.risk_ml_anomaly or s.risk_heuristics %}class="risk"{% endif %}>
+                <td>{{ i }}</td>
+                <td class="supplier">{{ s.supplier }}</td>
+                <td>{{ "%.3f"|format(s.relevance) }}</td>
+                <td>
+                    {% if s.risk_heuristics %}{{ s.risk_heuristics }}{% endif %}
+                    {% if s.risk_ml_anomaly %} Аномалия (ML){% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p>Поставщики не найдены</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    <div class="footer">
+        Сгенерировано AI-Procure • {{ now() }}<br>
+        <em>Нажмите Ctrl+P → Сохранить как PDF для печати</em>
+    </div>
+</body>
+</html>
